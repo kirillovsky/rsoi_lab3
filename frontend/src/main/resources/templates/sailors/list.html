@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
+	layout:decorator="layout">
+<head>
+<title>Messages : View all</title>
+</head>
+<body>
+	<h1 layout:fragment="header">Sailors</h1>
+	<p layout:fragment="content" class="container">
+		<!--<div class="pull-right">
+			<a href="form.html" th:href="@{/(form)}">Create Message</a>
+		</div>-->
+		<table class="table table-bordered table-striped">
+			<thead>
+				<tr>
+					<td>ID</td>
+					<td>First Name</td>
+					<td>Last Name</td>
+					<td>Ship</td>
+				</tr>
+			</thead>
+			<tbody>
+				<tr th:if="${list.getContent().empty}">
+					<td colspan="4">No sailors</td>
+				</tr>
+				<tr th:each="sailor : ${list.getContent()}">
+					<td><a href="hrefShipId" th:href="@{'/sailors/' + ${sailor.id}}" th:text="${sailor.id}">1</a></td>
+					<td th:text="${sailor.firstName}">Some text...</td>
+					<td th:text="${sailor.lastName}">Some text...</td>
+					<td><a href="hrefShipId" th:href="@{'/ships/' + ${sailor.shipEmpl}}" th:text="${sailor.shipEmpl}">1</a></td>
+				</tr>
+			</tbody>
+		</table>
+		<p><h3>Pages:</h3></p>
+		<tr th:each="j: ${#numbers.sequence(1, list.totalPages)}">
+			<td th:if="${list.number == j}"><h4 th:text="${j} ">1</h4></td>
+			<td th:if="${list.number != j}">
+			<a href="pages" th:href="@{'/sailors&#63;per_page=' + ${list.size} + '&amp;page=' + ${j}}" th:text="${j} ">1</a>
+			</td>
+		</tr>
+	</p>
+</body>
+</html>
