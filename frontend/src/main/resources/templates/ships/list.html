@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
+	layout:decorator="layout">
+<head>
+<title>Ships : View all</title>
+</head>
+<body>
+	<h1 layout:fragment="header">Ships</h1>
+	<p layout:fragment="content" class="container">
+		<div class="pull-right">
+			<a th:href="@{/shipForm}">Create Ship</a>
+		</div>
+		<table class="table table-bordered table-striped">
+			<thead>
+				<tr>
+					<td>ID</td>
+					<td>Name</td>
+					<td>Country</td>
+				</tr>
+			</thead>
+			<tbody>
+				<tr th:if="${list.getContent().empty}">
+					<td colspan="4">No ships</td>
+				</tr>
+				<tr th:each="ship : ${list.getContent()}">
+					<td><a href="hrefShipId" th:href="@{'/ships/' + ${ship.id}}" th:text="${ship.id}">1</a></td>
+					<td th:text="${ship.name}">Some text...</td>
+					<td th:text="${ship.country}">Some text...</td>
+				</tr>
+			</tbody>
+		</table>
+		<p><h3>Pages:</h3></p>
+		<tr th:each="j: ${#numbers.sequence(1, list.totalPages)}">
+			<td th:if="${list.number == j}"><h4 th:text="${j} ">1</h4></td>
+			<td th:if="${list.number != j}">
+			<a href="pages" th:href="@{'/ships&#63;per_page=' + ${list.size} + '&amp;page=' + ${j}}" th:text="${j} ">1</a>
+			</td>
+		</tr>
+	</p>
+</body>
+</html>

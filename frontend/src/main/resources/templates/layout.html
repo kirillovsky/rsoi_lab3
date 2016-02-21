@@ -10,16 +10,33 @@
 <div class="container">
     <div class="navbar">
         <div class="navbar-inner">
+            <a class="brand" href="/">
+                Main </a>
             <a class="brand"
                href="https://github.com/ultraq/thymeleaf-layout-dialect">
                 Thymeleaf - Layout </a>
             <ul class="nav">
-                <li><a th:href="@{/}" href="messages.html"> Messages </a></li>
+                <li><a th:href="@{/sailors}"> Sailors </a></li>
+                <li><a th:href="@{/ships}"> Ships </a></li>
+                <li>
+                <div class="pull-right" th:if="${isAuthorised == null or !isAuthorised}">
+                    <a href="form.html" th:href="@{'/userForm/'}">
+                        sign up</a>|<a href="form.html" th:href="@{'/login/'}">login</a>
+                </div>
+                <div class="pull-right" th:if="${isAuthorised != null and isAuthorised}">
+                    <a href="form.html" th:href="@{'/me'}">
+                        me</a>|<a href="form.html" th:href="@{'/logout'}">login</a>
+                </div>
+                </li>
             </ul>
         </div>
     </div>
-    <h1 layout:fragment="header">Layout</h1>
-    <div layout:fragment="content">Fake content</div>
+    <div class="alert alert-success" th:if="${lastDeleteMsg}"
+         th:text="${lastDeleteMsg}">Some Success message</div>
+    <div class="alert alert-error" th:if="${errorMessage}"
+         th:text="${errorMessage}">Some Error message</div>
+    <h1 layout:fragment="header">Start Page</h1>
+    <div layout:fragment="content"><h2>Hello human or machine!!!</h2></div>
 </div>
 </body>
 </html>

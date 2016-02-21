@@ -2,7 +2,7 @@
 	xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
 	layout:decorator="layout">
 <head>
-<title>Messages : View</title>
+<title>Sailor: View</title>
 </head>
 <body>
 	<h1 layout:fragment="header" th:text="@{'Sailor: ' + ${sailor.id}}">Sailor</h1>
@@ -36,9 +36,16 @@
 			</dd>
 		</dl>
 		<div class="pull-left">
-			<a href="sailors" th:href="@{'/delete/' + ${sailor.id}}">
-				delete </a> | <a href="form.html"
-				th:href="@{'/modify/' + ${sailor.id}}"> modify </a>
+			<form method="post" th:action="@{'/deleteSailor/' + ${sailor.id}}" name="deleteSailorForm">
+				<a href="javascript: submitForm()">
+					delete </a>|<a href="form.html"
+								   th:href="@{'/sailorForm/' + ${sailor.id}}"> modify </a>
+			</form>
+			<script>
+				function submitForm(){
+					document.deleteSailorForm.submit();
+				}
+			</script>
 		</div>
 	</div>
 </body>

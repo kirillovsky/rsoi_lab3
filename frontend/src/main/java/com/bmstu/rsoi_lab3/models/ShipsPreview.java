@@ -1,10 +1,12 @@
 package com.bmstu.rsoi_lab3.models;
 
+import com.bmstu.rsoi_lab3.markers.ShipBackend;
+
 /**
  * Created by Александр on 09.02.2016.
  */
 
-public class ShipsPreview {
+public class ShipsPreview implements ShipBackend{
 
     private Long id;
     private String name;
@@ -22,6 +24,9 @@ public class ShipsPreview {
         this.country = country;
     }
 
+    public ShipsPreview() {
+    }
+
     public Long getId() {
         return id;
     }
@@ -34,4 +39,15 @@ public class ShipsPreview {
         return country;
     }
 
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 }

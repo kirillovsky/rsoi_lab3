@@ -1,6 +1,11 @@
 package com.bmstu.rsoi_lab3.models;
 
+import com.bmstu.rsoi_lab3.markers.SailorBackend;
+import org.hibernate.validator.constraints.NotEmpty;
+
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Null;
 import java.io.Serializable;
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -9,13 +14,22 @@ import java.sql.Timestamp;
  * Created by Александр on 08.02.2016.
  */
 
-public class Sailors implements Serializable {
+public class Sailors implements Serializable, SailorBackend {
 
     private Long id;
+
+    @NotEmpty(message = "First Name is required.")
     private String firstName;
+
+    @NotEmpty(message = "Last Name is required.")
     private String lastName;
+
+    @NotEmpty(message = "Speciality is required.")
     private String speciality;
+
     private Date hiredate;
+
+    @NotNull(message = "Ship ID is required.")
     private Long shipEmpl;
 
     public Sailors(Long id, String firstName, String lastName, String speciality, Date hiredate, Long ship_empl) {

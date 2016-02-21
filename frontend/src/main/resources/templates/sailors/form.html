@@ -1,34 +1,38 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-	xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
-	layout:decorator="layout">
+	  xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
+	  layout:decorator="layout">
 <head>
-<title>Messages : Create</title>
+	<title>Messages : Create</title>
 </head>
 <body>
-	<h1 layout:fragment="header">Messages : Create</h1>
-	<div layout:fragment="content" class="container">
-		<form id="messageForm" th:action="@{/(form)}" th:object="${message}"
-			action="#" method="post">
-			<div th:if="${#fields.hasErrors('*')}" class="alert alert-error">
-				<p th:each="error : ${#fields.errors('*')}" th:text="${error}">
-					Validation error</p>
-			</div>
-			<div class="pull-right">
-				<a th:href="@{/}" href="messages.html"> Messages </a>
-			</div>
-			<input type="hidden" th:field="*{id}"
-				th:class="${#fields.hasErrors('id')} ? 'field-error'" /> <label
-				for="summary">Summary</label> <input type="text"
-				th:field="*{summary}"
-				th:class="${#fields.hasErrors('summary')} ? 'field-error'" /> <label
-				for="text">Message</label>
-			<textarea th:field="*{text}"
-				th:class="${#fields.hasErrors('text')} ? 'field-error'"></textarea>
-			<div class="form-actions">
-				<input type="submit" value="Save" />
-			</div>
-		</form>
-	</div>
+<h1 layout:fragment="header" th:text="${id != null} ? 'Sailors: Modify': 'Sailors: Create'">Ships: Create</h1>
+<div layout:fragment="content" class="container">
+	<form id="messageForm" th:action="${id != null} ? @{/sailors/} + ${id}: @{/sailors}" th:object="${newSailor}"
+		  action="#" method="post">
+		<div th:if="${#fields.hasErrors('*')}" class="alert alert-error">
+			<p th:each="error : ${#fields.errors('*')}" th:text="${error}">
+				Validation error</p>
+		</div>
+		<input type="hidden" th:field="*{id}"
+			   th:class="${#fields.hasErrors('id')} ? 'field-error'" /> <label
+			for="firstName">First Name</label> <input type="text"
+										   th:field="*{firstName}"
+										   th:class="${#fields.hasErrors('firstName')} ? 'field-error'" /> <label
+			for="lastName">Last Name</label> <input type="text"
+												 th:field="*{lastName}"
+												 th:class="${#fields.hasErrors('lastName')} ? 'field-error'" /> <label
+			for="speciality">Speciality</label> <input type="text"
+													th:field="*{speciality}"
+													th:class="${#fields.hasErrors('speciality')} ? 'field-error'" /> <label
+			for="shipEmpl">Ship Id</label> <input type="text"
+										   th:field="*{shipEmpl}"
+										   th:class="${#fields.hasErrors('shipEmpl')} ? 'field-error'" />
+		<!--<input type="hidden" th:field="*{hiredate}" th:class="${#fields.hasErrors('hiredate')} ? 'field-error'" />-->
+		<div class="form-actions">
+			<input type="submit" value="Save" />
+		</div>
+	</form>
+</div>
 </body>
 </html>

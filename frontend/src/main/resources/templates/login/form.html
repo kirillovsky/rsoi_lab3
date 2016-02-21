@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
+	layout:decorator="layout">
+<head>
+<title>Messages : Create</title>
+</head>
+<body>
+	<h1 layout:fragment="header" th:text="'Login'">Ships: Create</h1>
+	<div layout:fragment="content" class="container">
+		<form id="messageForm" th:action=" @{/login}" th:object="${newLoginEntity}"
+			action="#" method="post">
+			<div th:if="${#fields.hasErrors('*')}" class="alert alert-error">
+				<p th:each="error : ${#fields.errors('*')}" th:text="${error}">
+					Validation error</p>
+			</div>
+			 <label
+				for="login">Login</label> <input type="text"
+				th:field="*{login}"
+				th:class="${#fields.hasErrors('login')} ? 'field-error'" /> <label
+				for="password">Password</label> <input type="password"
+				   th:field="*{password}"
+				   th:class="${#fields.hasErrors('password')} ? 'field-error'" />
+			<div class="form-actions">
+				<input type="submit" value="Save" />
+			</div>
+		</form>
+	</div>
+</body>
+</html>

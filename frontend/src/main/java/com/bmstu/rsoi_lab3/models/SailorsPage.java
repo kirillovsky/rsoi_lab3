@@ -1,5 +1,6 @@
 package com.bmstu.rsoi_lab3.models;
 
+import com.bmstu.rsoi_lab3.markers.SailorBackend;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
 
@@ -8,7 +9,7 @@ import java.util.List;
  */
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class SailorsPage {
+public class SailorsPage implements SailorBackend {
     private List<SailorsPreview> content;
     private int totalElements;
     private boolean last;

@@ -6,8 +6,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import java.io.Serializable;
 import java.sql.Date;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 
 /**
  * Created by Александр on 13.02.2016.
@@ -24,28 +22,28 @@ public class Sessions implements Serializable {
     @Column(nullable = false, unique = true)
     private Long userId;
 
+    @Column(nullable = false)
+    private Long expired_time;
+
     protected Sessions() {
     }
 
     public Sessions(Long userId) {
         super();
         this.userId = userId;
-        this.expired_time = new Date(System.currentTimeMillis() + SESSION_LIVE_TIME);
+        this.expired_time = System.currentTimeMillis() + SESSION_LIVE_TIME;
     }
 
     public Sessions(Long sessionId, Long userId) {
         super();
         this.sessionId = sessionId;
         this.userId = userId;
-        this.expired_time = new Date(System.currentTimeMillis() + SESSION_LIVE_TIME);
+        this.expired_time = System.currentTimeMillis() + SESSION_LIVE_TIME;
     }
 
-    public Date getExpiredTime() {
+    public Long getExpiredTime() {
         return expired_time;
     }
-
-    @Column(nullable = false)
-    private Date expired_time;
 
     public Long getSessionId() {
         return sessionId;
@@ -56,7 +54,7 @@ public class Sessions implements Serializable {
     }
 
     public void refreshExpiredTime(){
-        this.expired_time = new Date(System.currentTimeMillis() + SESSION_LIVE_TIME);
+        this.expired_time = System.currentTimeMillis() + SESSION_LIVE_TIME;
     }
 
     @Override

@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:h2:tcp://localhost/~/rsoi_lab31
+    username: Lichdraw
+    password: Lichdraw
+    driver-class-name: org.h2.Driver
+    ddl-auto:
+
+server:
+  port: 8004

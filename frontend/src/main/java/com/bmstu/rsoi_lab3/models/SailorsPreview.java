@@ -1,10 +1,12 @@
 package com.bmstu.rsoi_lab3.models;
 
+import com.bmstu.rsoi_lab3.markers.SailorBackend;
+
 /**
  * Created by Александр on 09.02.2016.
  */
 
-public class SailorsPreview {
+public class SailorsPreview implements SailorBackend {
 
     private Long id;
     private String firstName;

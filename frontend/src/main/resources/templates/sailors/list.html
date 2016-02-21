@@ -3,14 +3,14 @@
 	xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
 	layout:decorator="layout">
 <head>
-<title>Messages : View all</title>
+<title>Sailors : View all</title>
 </head>
 <body>
 	<h1 layout:fragment="header">Sailors</h1>
 	<p layout:fragment="content" class="container">
-		<!--<div class="pull-right">
-			<a href="form.html" th:href="@{/(form)}">Create Message</a>
-		</div>-->
+		<div class="pull-right">
+			<a href="form.html" th:href="@{/sailorForm}">Create Sailor</a>
+		</div>
 		<table class="table table-bordered table-striped">
 			<thead>
 				<tr>

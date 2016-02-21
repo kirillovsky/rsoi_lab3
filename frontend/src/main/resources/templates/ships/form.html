@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
+	layout:decorator="layout">
+<head>
+<title>Messages : Create</title>
+</head>
+<body>
+	<h1 layout:fragment="header" th:text="${id != null} ? 'Ships: Modify': 'Ships: Create'">Ships: Create</h1>
+	<div layout:fragment="content" class="container">
+		<form id="messageForm" th:action="${id != null} ? @{/ships/} + ${id}: @{/ships}" th:object="${newShip}"
+			action="#" method="post">
+			<div th:if="${#fields.hasErrors('*')}" class="alert alert-error">
+				<p th:each="error : ${#fields.errors('*')}" th:text="${error}">
+					Validation error</p>
+			</div>
+			<input type="hidden" th:field="*{id}"
+				th:class="${#fields.hasErrors('id')} ? 'field-error'" /> <label
+				for="name">Name</label> <input type="text"
+				th:field="*{name}"
+				th:class="${#fields.hasErrors('name')} ? 'field-error'" /> <label
+				for="type">Type</label> <input type="text"
+				   th:field="*{type}"
+				   th:class="${#fields.hasErrors('type')} ? 'field-error'" /> <label
+				for="country">Country</label> <input type="text" th:field="*{country}" th:class="${#fields.hasErrors('country')} ? 'field-error'" />
+			<div class="form-actions">
+				<input type="submit" value="Save" />
+			</div>
+		</form>
+	</div>
+</body>
+</html>
