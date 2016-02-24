@@ -1,17 +1,19 @@
 package com.bmstu.rsoi_lab3.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import java.io.Serializable;
-import java.sql.Date;
 
 /**
  * Created by Александр on 13.02.2016.
  */
 
 @Entity
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Sessions implements Serializable {
 
     static final long SESSION_LIVE_TIME = 2*60*1000L;
@@ -20,48 +22,52 @@ public class Sessions implements Serializable {
     private Long sessionId;
 
     @Column(nullable = false, unique = true)
-    private Long userId;
+    private String login;
 
     @Column(nullable = false)
-    private Long expired_time;
+    private String password;
 
-    protected Sessions() {
+    @Column(nullable = false)
+    private Long expiredTime;
+
+    public Sessions(String password, String login) {
+        this.expiredTime = System.currentTimeMillis() + SESSION_LIVE_TIME;
+        this.password = password;
+        this.login = login;
     }
 
-    public Sessions(Long userId) {
-        super();
-        this.userId = userId;
-        this.expired_time = System.currentTimeMillis() + SESSION_LIVE_TIME;
+    public Sessions() {
     }
 
-    public Sessions(Long sessionId, Long userId) {
-        super();
-        this.sessionId = sessionId;
-        this.userId = userId;
-        this.expired_time = System.currentTimeMillis() + SESSION_LIVE_TIME;
+    public String getLogin() {
+        return login;
     }
 
-    public Long getExpiredTime() {
-        return expired_time;
+    public void setLogin(String login) {
+        this.login = login;
     }
 
     public Long getSessionId() {
         return sessionId;
     }
 
-    public Long getUserId() {
-        return userId;
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public Long getExpiredTime() {
+        return expiredTime;
+    }
+
+    public void setExpiredTime(Long expiredTime) {
+        this.expiredTime = expiredTime;
     }
 
     public void refreshExpiredTime(){
-        this.expired_time = System.currentTimeMillis() + SESSION_LIVE_TIME;
-    }
-
-    @Override
-    public String toString() {
-        return "Sessions{" +
-                "sessionId=" + sessionId +
-                ", userId=" + userId +
-                '}';
+        this.expiredTime = SESSION_LIVE_TIME + System.currentTimeMillis();
     }
 }

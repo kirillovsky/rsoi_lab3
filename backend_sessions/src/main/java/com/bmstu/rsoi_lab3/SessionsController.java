@@ -3,11 +3,11 @@ package com.bmstu.rsoi_lab3;
 
 import com.bmstu.rsoi_lab3.domain.Sessions;
 import com.bmstu.rsoi_lab3.service.SessionsRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.UnexpectedRollbackException;
@@ -15,8 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
-import java.sql.Date;
-import java.time.LocalDate;
+import java.io.IOException;
 
 /**
  * Created by Александр on 09.02.2016.
@@ -35,59 +34,57 @@ public class SessionsController {
         this.service = service;
     }
 
-    @RequestMapping(value = "/{userId}", method=RequestMethod.GET)
-    public Sessions getSession(@PathVariable Long userId, HttpServletRequest request){
-        if(service.findByUserId(userId) == null){
-            throw new SessionsNotFoundException(userId);
+    @RequestMapping(value = "/{login}", method=RequestMethod.GET)
+    public Sessions getSession(@PathVariable String login){
+        Sessions s = service.findByLogin(login);
+
+        if(s == null){
+            throw new SessionsNotFoundException(login);
         }
 
-        log.info("ALKI: " + request.getMethod() + " " + request.getRequestURI());
-
-        Sessions s = service.findByUserId(userId);
-
-        if(s.getExpiredTime() < System.currentTimeMillis()) {
+        if(s.getExpiredTime() <= System.currentTimeMillis()) {
             service.delete(s.getSessionId());
-            throw new SessionsNotFoundException(userId);
+            throw new SessionsNotFoundException(login);
         }
 
-        return service.findByUserId(userId);
+        return s;
     }
 
 
     @RequestMapping(value = "/{sessionId}", method=RequestMethod.DELETE)
-    public void deleteSessions(@PathVariable long sessionId, HttpServletRequest request){
+    public void deleteSessions(@PathVariable long sessionId){
         if(!service.exists(sessionId)){
             throw new SessionsNotFoundException(sessionId);
         }
 
-        log.info("ALKI: " + request.getMethod() + " " + request.getRequestURI());
-
         service.delete(sessionId);
     }
 
-    @RequestMapping(value = "/{userId}", method={RequestMethod.PATCH, RequestMethod.PUT})
-    public void updateSessions(@PathVariable long userId, HttpServletRequest request){
-        Sessions newS = service.findByUserId(userId);
-        log.info("ALKI: " + request.getMethod() + " " + request.getRequestURI());
+    @RequestMapping(value = "/{sessionId}", method={RequestMethod.PATCH, RequestMethod.PUT})
+    public void updateSessions(@PathVariable long sessionId){
+        Sessions newS = service.findOne(sessionId);
         if(newS == null)
-            throw new SessionsNotFoundException(userId);
+            throw new SessionsNotFoundException(sessionId);
 
         newS.refreshExpiredTime();
         service.save(newS);
     }
 
-    @RequestMapping(value = "/{userId}", method=RequestMethod.POST)
-    public ResponseEntity<?> addSessions(@PathVariable long userId, HttpServletRequest request){
-        Sessions s = new Sessions(new Long(userId));
-        s = service.save(s);
+    @RequestMapping(method=RequestMethod.POST)
+    public ResponseEntity<Sessions> addSessions(@RequestBody String str){
+        Sessions s = getSessionsFromJson(str);
 
-        log.info("ALKI: " + request.getMethod() + " " + request.getRequestURI());
+        if(service.findByLogin(s.getLogin()) != null)
+            throw new SessionsAlreadyExists(s);
+
+        s.refreshExpiredTime();
+        s = service.save(s);
 
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setLocation(ServletUriComponentsBuilder.fromCurrentRequest()
                 .buildAndExpand(s.getSessionId()).toUri());
 
-        return new ResponseEntity<>(null, httpHeaders, HttpStatus.CREATED);
+        return new ResponseEntity<>(s, httpHeaders, HttpStatus.CREATED);
 
     }
 
@@ -96,6 +93,26 @@ public class SessionsController {
 
         public SessionsNotFoundException(long sessionId) {
             super("Could not find Sessions[" + sessionId + "]");
+        }
+
+        public SessionsNotFoundException(String login) {
+            super("Could not find Sessions for login=" + login);
+        }
+    }
+
+    @ResponseStatus(HttpStatus.CONFLICT)
+    class SessionsAlreadyExists extends RuntimeException {
+
+        public SessionsAlreadyExists(Sessions s) {
+            super("Sessions with such login:"+ s.getLogin() +" already exists");
+        }
+    }
+
+    @ResponseStatus(HttpStatus.CONFLICT)
+    class SessionsBadRequest extends RuntimeException {
+
+        public SessionsBadRequest() {
+            super("Wrong json format");
         }
     }
 
@@ -106,6 +123,19 @@ public class SessionsController {
     public void shipWithExpectedIdDoesntExists(){
 
     }
+
+    private Sessions getSessionsFromJson(String json){
+        Sessions result;
+
+        try {
+            result = new ObjectMapper().readValue(json, Sessions.class);
+        } catch (IOException e) {
+            throw new SessionsBadRequest();
+        }
+
+        return result;
+    }
+
 
 
 }

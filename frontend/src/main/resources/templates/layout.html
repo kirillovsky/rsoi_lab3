@@ -20,12 +20,12 @@
                 <li><a th:href="@{/ships}"> Ships </a></li>
                 <li>
                 <div class="pull-right" th:if="${isAuthorised == null or !isAuthorised}">
-                    <a href="form.html" th:href="@{'/userForm/'}">
-                        sign up</a>|<a href="form.html" th:href="@{'/login/'}">login</a>
+                    <a href="form.html" th:href="@{'/signUp/'}">
+                        sign up</a>|<a href="form.html" th:href="@{'/login/'}">sign in</a>
                 </div>
                 <div class="pull-right" th:if="${isAuthorised != null and isAuthorised}">
                     <a href="form.html" th:href="@{'/me'}">
-                        me</a>|<a href="form.html" th:href="@{'/logout'}">login</a>
+                        me</a>|<a href="form.html" th:href="@{'/logout'}">logout</a>
                 </div>
                 </li>
             </ul>

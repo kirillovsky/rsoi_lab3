@@ -28,7 +28,7 @@
 					<td><a href="hrefShipId" th:href="@{'/sailors/' + ${sailor.id}}" th:text="${sailor.id}">1</a></td>
 					<td th:text="${sailor.firstName}">Some text...</td>
 					<td th:text="${sailor.lastName}">Some text...</td>
-					<td><a href="hrefShipId" th:href="@{'/ships/' + ${sailor.shipEmpl}}" th:text="${sailor.shipEmpl}">1</a></td>
+					<td><a href="hrefShipId" th:href="@{'/ships/' + ${sailor.shipEmpl}}" th:text="${names.get(sailor.shipEmpl)}">1</a></td>
 				</tr>
 			</tbody>
 		</table>

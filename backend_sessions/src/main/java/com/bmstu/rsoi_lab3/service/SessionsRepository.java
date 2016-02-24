@@ -19,8 +19,8 @@ public interface SessionsRepository extends PagingAndSortingRepository<Sessions,
     Sessions findOne(Long aLong);
 
     boolean exists(Long aLong);
-    
+
     void delete(Long aLong);
 
-    Sessions findByUserId(Long userId);
+    Sessions findByLogin(String login);
 }

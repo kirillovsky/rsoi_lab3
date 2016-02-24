@@ -2,8 +2,6 @@ package com.bmstu.rsoi_lab3.service;
 
 import com.bmstu.rsoi_lab3.domain.Ships;
 import com.bmstu.rsoi_lab3.domain.ShipsPreview;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -11,7 +9,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -21,9 +20,6 @@ import java.util.stream.Collectors;
 @Transactional
 public class ShipsServiceImpl implements ShipsService {
     private final ShipsRepository repo;
-
-    private static final Logger log = LoggerFactory.getLogger(ShipsServiceImpl.class);
-
 
     @Autowired
     public ShipsServiceImpl(ShipsRepository repo) {
@@ -67,19 +63,5 @@ public class ShipsServiceImpl implements ShipsService {
     public boolean hasShips(long id) {
         return repo.exists(new Long(id));
     }
-
-    @Override
-    public List<Map<Long, String>> getShipsNames(List<Long> ids) {
-        List<Map<Long, String>> map = repo.getShipsNames(removeDuplicatesFromListList(ids));
-        return map;
-    }
-
-    private List<Long> removeDuplicatesFromListList(List<Long> ids){
-        Set<Long> set = new HashSet<>();
-        for(Long id: ids)
-            set.add(id);
-        return new LinkedList<>(set);
-    }
-
 
 }

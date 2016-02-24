@@ -4,10 +4,7 @@ package com.bmstu.rsoi_lab3;
 import com.bmstu.rsoi_lab3.domain.Ships;
 import com.bmstu.rsoi_lab3.domain.ShipsPreview;
 import com.bmstu.rsoi_lab3.service.ShipsService;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
@@ -18,8 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Created by Александр on 09.02.2016.
@@ -31,28 +26,18 @@ public class ShipsController {
 
     private ShipsService service;
 
-    private static final Logger log = LoggerFactory.getLogger(ShipsController.class);
-
-
     @Autowired
     public ShipsController(ShipsService service) {
         this.service = service;
     }
 
     @RequestMapping(method= RequestMethod.GET)
-    public Page<ShipsPreview> getShips(@RequestParam("per_page") int perPage, @RequestParam("page") int pageNum){
+    public Page<ShipsPreview> getSailors(@RequestParam("per_page") int perPage, @RequestParam("page") int pageNum){
         return service.getShipsPageWithPreview(pageNum, perPage);
     }
 
-    @RequestMapping(value = "/names", method= RequestMethod.GET)
-    public Iterable<Map<Long, String>> getShipsName(@RequestParam("id") List<Long> listValue){
-        log.error(listValue.toString());
-        return service.getShipsNames(listValue);
-
-    }
-
     @RequestMapping(value = "/{shipsId}", method= RequestMethod.GET)
-    public Ships getShip(@PathVariable Long shipsId){
+    public Ships getSailor(@PathVariable Long shipsId){
         if(!service.hasShips(shipsId)){
             throw new ShipsNotFoundException(shipsId);
         }
@@ -61,7 +46,7 @@ public class ShipsController {
     }
 
     @RequestMapping(value = "/{shipsId}", method=RequestMethod.DELETE)
-    public void deleteShip(@PathVariable long shipsId){
+    public void deleteSailor(@PathVariable long shipsId){
         if(!service.hasShips(shipsId)){
             throw new ShipsNotFoundException(shipsId);
         }
@@ -80,7 +65,7 @@ public class ShipsController {
     }
 
     @RequestMapping(method=RequestMethod.POST)
-    public ResponseEntity<Ships> addShips(@RequestBody String sailor){
+    public ResponseEntity<?> addShips(@RequestBody String sailor){
         Ships s = service.addShips(getShipsFromJson(sailor));
 
         HttpHeaders httpHeaders = new HttpHeaders();
@@ -88,7 +73,7 @@ public class ShipsController {
                 .fromCurrentRequest().path("/{id}")
                 .buildAndExpand(s.getId()).toUri());
 
-        return new ResponseEntity<>(s, httpHeaders, HttpStatus.CREATED);
+        return new ResponseEntity<>(null, httpHeaders, HttpStatus.CREATED);
     }
 
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -107,6 +92,12 @@ public class ShipsController {
         }
     }
 
+//    @ResponseStatus(HttpStatus.BAD_REQUEST)
+//    public static class SailorsForeignKeyToShipsDoesNotExists extends RuntimeException {
+//        public SailorsForeignKeyToShipsDoesNotExists(String msg) {
+//            super(msg);
+//        }
+//    }
 
 
     private Ships getShipsFromJson(String json){
@@ -114,18 +105,6 @@ public class ShipsController {
 
         try {
             result = new ObjectMapper().readValue(json, Ships.class);
-        } catch (IOException e) {
-            throw new ShipsBadRequest(e);
-        }
-
-        return result;
-    }
-
-    private List<Long> getShipsIdsFromJson(String json){
-        List<Long> result;
-
-        try {
-            result = new ObjectMapper().readValue(json, new TypeReference<List<Long>>(){});
         } catch (IOException e) {
             throw new ShipsBadRequest(e);
         }

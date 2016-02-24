@@ -3,8 +3,6 @@ package com.bmstu.rsoi_lab3.domain;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.sql.Date;
-import java.util.AbstractMap;
-import java.util.HashMap;
 
 /**
  * Created by Александр on 08.02.2016.
@@ -63,6 +61,5 @@ public class Ships implements Serializable {
                 ", type='" + type + '\'' +
                 ", country='" + country  +
                 '}';
-
     }
 }

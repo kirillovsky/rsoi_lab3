@@ -1,49 +1,51 @@
 package com.bmstu.rsoi_lab3.models;
 
 import com.bmstu.rsoi_lab3.markers.SessionBackend;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import org.hibernate.validator.constraints.NotEmpty;
 
 import java.io.Serializable;
-import java.sql.Date;
 
 /**
  * Created by Александр on 13.02.2016.
  */
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Sessions implements Serializable, SessionBackend {
 
-    static final long SESSION_LIVE_TIME = 2*60*1000L;
     private Long sessionId;
-    private Long userId;
-    private Long expired_time;
 
-    protected Sessions() {
+    @NotEmpty(message = "Login is required.")
+    private String login;
+
+    @NotEmpty(message = "Password is required.")
+    private String password;
+
+
+    public Sessions() {
     }
 
-
-    public Sessions(Long sessionId, Long userId, Long expired_time) {
-        super();
-        this.sessionId = sessionId;
-        this.userId = userId;
-        this.expired_time = expired_time;
+    public String getLogin() {
+        return login;
     }
 
-    public Long getExpiredTime() {
-        return expired_time;
+    public void setLogin(String login) {
+        this.login = login;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public Long getSessionId() {
         return sessionId;
     }
 
-    public Long getUserId() {
-        return userId;
-    }
-
-    @Override
-    public String toString() {
-        return "Sessions{" +
-                "sessionId=" + sessionId +
-                ", userId=" + userId +
-                '}';
+    public void setSessionId(Long sessionId) {
+        this.sessionId = sessionId;
     }
 }

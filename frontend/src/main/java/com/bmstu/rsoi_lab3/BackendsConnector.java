@@ -3,6 +3,8 @@ package com.bmstu.rsoi_lab3;
 import com.bmstu.rsoi_lab3.models.*;
 
 import javax.servlet.http.HttpServletResponse;
+import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -18,9 +20,10 @@ public interface BackendsConnector {
 
     SailorsPage getSailors(int pageNum, int pageSize);
     ShipsPage getShips(int pageNum, int pageSize);
+    Map<Long, String> getShipsNames(List<Long> ids);
 
-    String createShips(Ships s);
-    String createSailors(Sailors s);
+    Ships createShips(Ships s);
+    Sailors createSailors(Sailors s);
 
     void updateSailors(Sailors s);
     void updateShips(Ships s);
@@ -30,28 +33,10 @@ public interface BackendsConnector {
 
     boolean existsShip(long shipId);
 
-    Users getUser(long userId);
+    Sessions getSession(String login);
+    Sessions createSession(Sessions s);
+    void updateSessions(Sessions s);
+    void deleteSessions(long sessionId);
 
-    void updateUser(Users newUser);
 
-    String createUser(Users newUser);
-
-    Users getUser(String user);
-
-    boolean existsUserWithLogin(String login);
-
-    Users getUserViaLogin(String login);
-
-    Sessions createOrRefreshSession(Users u, HttpServletResponse response);
-    void setUserCookee(Long userId, HttpServletResponse response);
-    void refreshSession(Sessions s);
-    void refreshSessionForUserId(Long id);
-    Sessions createSession(Long id);
-    Sessions getSessionForUserId(Long id);
-    Sessions getSession(String str);
-    boolean testSessionForUserId(Long id);
-
-    String getUserCookieName();
-
-    void logout(long userId);
 }

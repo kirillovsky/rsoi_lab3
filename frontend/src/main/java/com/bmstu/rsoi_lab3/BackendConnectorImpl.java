@@ -2,10 +2,18 @@ package com.bmstu.rsoi_lab3;
 
 import com.bmstu.rsoi_lab3.exception.BackendConnectionException;
 import com.bmstu.rsoi_lab3.exception.BackendNotException;
+import com.bmstu.rsoi_lab3.markers.SailorBackend;
+import com.bmstu.rsoi_lab3.markers.SessionBackend;
+import com.bmstu.rsoi_lab3.markers.ShipBackend;
 import com.bmstu.rsoi_lab3.models.*;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.RequestEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -13,6 +21,12 @@ import org.springframework.web.client.RestTemplate;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
+import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Александр on 17.02.2016.
@@ -22,9 +36,7 @@ import javax.validation.constraints.NotNull;
 public class BackendConnectorImpl implements BackendsConnector {
     protected static String SAILORS_BACKEND_URL = "http://127.0.0.1:8001/sailors";
     protected static String SHIPS_BACKEND_URL = "http://127.0.0.1:8010/ships";
-    protected static String USERS_BACKEND_URL = "http://127.0.0.1:8011/users";
     protected static String SESSIONS_BACKEND_URL = "http://127.0.0.1:8100/sessions";
-    protected static String USER_COOKIE_NAME = "USER_ID";
 
     private static final Logger log = LoggerFactory.getLogger(FrontendApplication.class);
 
@@ -36,18 +48,7 @@ public class BackendConnectorImpl implements BackendsConnector {
 
     @Override
     public Sailors getSailor(String url) {
-        try {
-            return getObjectViaConnect(url, Sailors.class);
-        }
-        catch (HttpClientErrorException e) {
-            if(e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.NOT_FOUND)
-                throw new BackendNotException("Sailor service", e.getStatusCode());
-            else
-                throw new BackendConnectionException("Sailor service");
-        }
-        catch (RuntimeException e){
-            throw new BackendConnectionException("Sailor service");
-        }
+        return getObjectViaConnect(url, Sailors.class);
 
     }
 
@@ -59,384 +60,214 @@ public class BackendConnectorImpl implements BackendsConnector {
 
     @Override
     public Ships getShip(String url) {
-        try {
-            return getObjectViaConnect(url, Ships.class);
-        }
-        catch (HttpClientErrorException e) {
-            if(e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.NOT_FOUND)
-                throw new BackendNotException("Ships service", e.getStatusCode());
-            else
-                throw new BackendConnectionException("Ships service");
-        }
-        catch (RuntimeException e){
-            throw new BackendConnectionException("Ships service");
-        }
+        return getObjectViaConnect(url, Ships.class);
     }
 
     @Override
     public SailorsPage getSailors(int pageNum, int pageSize) {
         String request = SAILORS_BACKEND_URL + "?page="+pageNum+"&per_page="+pageSize;
-        try {
-            return getObjectViaConnect(request, SailorsPage.class);
-        }
-        catch (HttpClientErrorException e) {
-            if(e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.NOT_FOUND)
-                throw new BackendNotException("Sailors service", e.getStatusCode());
-            else
-                throw new BackendConnectionException("Sailors service");
-        }
-        catch (RuntimeException e){
-            throw new BackendConnectionException("Sailors service");
-        }
+        return getObjectViaConnect(request, SailorsPage.class);
     }
 
     @Override
     public ShipsPage getShips(int pageNum, int pageSize) {
         String request = SHIPS_BACKEND_URL + "?page="+pageNum+"&per_page="+pageSize;
+        return getObjectViaConnect(request, ShipsPage.class);
+    }
+
+    @Override
+    public Map<Long, String> getShipsNames(List<Long> ids) {
+        String request = SHIPS_BACKEND_URL + "/names";
+        String params = "?id=" + ids.get(0);
+
+        for(int i = 1; i < ids.size(); i++)
+            params += "," + ids.get(i);
+
+        String resp = getObjectViaConnect(request + params, String.class);
+        List<NameMapWrapper> retLst;
         try {
-            return getObjectViaConnect(request, ShipsPage.class);
+            retLst = new ObjectMapper().readValue(resp,
+                    new TypeReference<List<NameMapWrapper>>(){});
+        } catch (IOException e) {
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "Bad request was sended to Ships backend");
         }
-        catch (HttpClientErrorException e) {
-            if(e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.NOT_FOUND)
-                throw new BackendNotException("Ships service", e.getStatusCode());
-            else
-                throw new BackendConnectionException("Ships service");
+
+        Map<Long, String> resultMap = new HashMap<>(retLst.size());
+
+        for(NameMapWrapper retVal: retLst){
+            resultMap.put(retVal.getId(), retVal.getName());
         }
-        catch (RuntimeException e){
-            throw new BackendConnectionException("Ships service");
-        }
+
+        return resultMap;
     }
 
     @Override
-    public String createShips(Ships s) {
-        return createObjectViaConnect(SHIPS_BACKEND_URL, s);
+    public Ships createShips(Ships s) {
+        return createObjectViaConnect(SHIPS_BACKEND_URL, s, Ships.class);
     }
 
     @Override
-    public String createSailors(Sailors s) {
-        return createObjectViaConnect(SAILORS_BACKEND_URL, s);
+    public Sailors createSailors(Sailors s) {
+        return createObjectViaConnect(SAILORS_BACKEND_URL, s, Sailors.class);
     }
 
     @Override
     public void updateSailors(Sailors s) {
         String request = SAILORS_BACKEND_URL + "/" + s.getId();
-        try {
-            updateObjectViaConnect(request, s);
-        }
-        catch (HttpClientErrorException e) {
-            if(e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.NOT_FOUND)
-                throw new BackendNotException("Sailors service", e.getStatusCode());
-            else
-                throw new BackendConnectionException("Sailors service");
-        }
-        catch (RuntimeException e){
-            throw new BackendConnectionException("Sailors service");
-        }
+        updateObjectViaConnect(request, s, Sailors.class);
 
     }
 
     @Override
     public void updateShips(Ships s) {
         String request = SHIPS_BACKEND_URL + "/" + s.getId();
-        try {
-            updateObjectViaConnect(request, s);
-        }
-        catch (HttpClientErrorException e) {
-            if(e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.NOT_FOUND)
-                throw new BackendNotException("Ships service", e.getStatusCode());
-            else
-                throw new BackendConnectionException("Ships service");
-        }
-        catch (RuntimeException e){
-            throw new BackendConnectionException("Ships service");
-        }
+        updateObjectViaConnect(request, s, Ships.class);
 
     }
 
     @Override
     public void deleteShips(long id) {
         String request = SHIPS_BACKEND_URL + "/" + id;
-        try {
-            sendDeleteRequest(request);
-        }
-        catch (HttpClientErrorException e) {
-            if(e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.NOT_FOUND)
-                throw new BackendNotException("Ships service", e.getStatusCode());
-            else
-                throw new BackendConnectionException("Ships service");
-        }
-        catch (RuntimeException e){
-            throw new BackendConnectionException("Ships service");
-        }
+        sendDeleteRequest(request, Ships.class);
 
     }
 
     @Override
     public void deleteSailor(long id) {
         String request = SAILORS_BACKEND_URL + "/" + id;
-        try {
-            sendDeleteRequest(request);
-        }
-        catch (HttpClientErrorException e) {
-            if(e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.NOT_FOUND)
-                throw new BackendNotException("Ships service", e.getStatusCode());
-            else
-                throw new BackendConnectionException("Ships service");
-        }
-        catch (RuntimeException e){
-            throw new BackendConnectionException("Ships service");
-        }
+        sendDeleteRequest(request, Sailors.class);
     }
 
     @Override
     public boolean existsShip(long shipId) {
         String request = SHIPS_BACKEND_URL + "/" + shipId;
-        try {
-            return existsObject(request, Ships.class);
-        }
-        catch (HttpClientErrorException e) {
-            if(e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.NOT_FOUND)
-                return false;
-            else
-                throw new BackendConnectionException("Ships service");
-        }
-        catch (RuntimeException e){
-            throw new BackendConnectionException("Ships service");
-        }
+        return existsObject(request, Ships.class);
     }
 
     @Override
-    public Users getUser(long userId) {
-        String request = USERS_BACKEND_URL + "/" + userId;
-        return getUser(request);
+    public Sessions getSession(String login) {
+        String request = SESSIONS_BACKEND_URL + "/" + login;
+        return getObjectViaConnect(request, Sessions.class);
     }
 
     @Override
-    public void updateUser(Users newUser) {
-        String request = USERS_BACKEND_URL + "/" + newUser.getId();
-        try {
-            updateObjectViaConnect(request, newUser);
-        }
-        catch (HttpClientErrorException e) {
-            if(e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.NOT_FOUND)
-                throw new BackendNotException("Users service", e.getStatusCode());
-            else
-                throw new BackendConnectionException("Users service");
-        }
-        catch (RuntimeException e){
-            throw new BackendConnectionException("Users service");
-        }
+    public Sessions createSession(Sessions s) {
+        String request = SESSIONS_BACKEND_URL;
+        return createObjectViaConnect(request, s, Sessions.class);
     }
 
     @Override
-    public String createUser(Users newUser) {
-        return createObjectViaConnect(USERS_BACKEND_URL, newUser);
+    public void updateSessions(Sessions s) {
+        String request = SESSIONS_BACKEND_URL + "/" + s.getSessionId();
+        updateObjectViaConnect(request, s, Sessions.class);
+
     }
 
     @Override
-    public Users getUser(String user) {
-        try {
-            return getObjectViaConnect(user, Users.class);
-        }
-        catch (HttpClientErrorException e) {
-            if(e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.NOT_FOUND)
-                throw new BackendNotException("Users service", e.getStatusCode());
-            else
-                throw new BackendConnectionException("Users service");
-        }
-        catch (RuntimeException e){
-            throw new BackendConnectionException("Users service");
-        }
+    public void deleteSessions(long sessionId) {
+        String request = SESSIONS_BACKEND_URL + "/" + sessionId;
+        sendDeleteRequest(request, Sessions.class);
     }
-
-    @Override
-    public boolean existsUserWithLogin(String login) {
-        String request = USERS_BACKEND_URL + "/?login=" + login;
-        try {
-            return existsObject(request, Users.class);
-        }
-        catch (HttpClientErrorException e) {
-            if(e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.NOT_FOUND)
-                return false;
-            else
-                throw new BackendConnectionException("Users service");
-        }
-        catch (RuntimeException e){
-            throw new BackendConnectionException("Users service");
-        }
-    }
-
-    @Override
-    public Users getUserViaLogin(String login) {
-        String request = USERS_BACKEND_URL + "/?login=" + login;
-        return getUser(request);
-    }
-
-    @Override
-    public Sessions createOrRefreshSession(Users u, HttpServletResponse response) {
-        Sessions s;
-
-        if(testSessionForUserId(u.getId())) {
-            log.info("ALKI1");
-            s = getSessionForUserId(u.getId());
-            log.info(s.toString());
-            refreshSession(s);
-            log.info(s.toString());
-        }
-        else {
-            log.info("ALKI111");
-            s = createSession(u.getId());
-        }
-        setUserCookee(u.getId(), response);
-
-        log.info(s.toString());
-
-        return s;
-    }
-
-    @Override
-    public void setUserCookee(Long userId, HttpServletResponse response) {
-        response.addCookie(new Cookie(USER_COOKIE_NAME, userId.toString()));
-    }
-
-    @Override
-    public void refreshSession(Sessions s) {
-        String request = SESSIONS_BACKEND_URL + "/" +s.getUserId();
-        try {
-            updateObjectViaConnect(request, null);
-        }
-        catch (HttpClientErrorException e) {
-            if(e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.NOT_FOUND)
-                throw new BackendNotException("Sessions service", e.getStatusCode());
-            else
-                throw new BackendConnectionException("Sessions service");
-        }
-        catch (RuntimeException e){
-            throw new BackendConnectionException("Sessions service");
-        }
-    }
-
-    @Override
-    public void refreshSessionForUserId(Long id) {
-        Sessions s = getSessionForUserId(id);
-        refreshSession(s);
-    }
-
-    @Override
-    public Sessions createSession(Long id) {
-        String request = SESSIONS_BACKEND_URL + "/" +id;
-        try {
-            String loc = createObjectViaConnect(request, null);
-            log.info(loc);
-            return getSession(loc);
-        }
-        catch (HttpClientErrorException e) {
-            if(e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.NOT_FOUND)
-                throw new BackendNotException("Sessions service", e.getStatusCode());
-            else
-                throw new BackendConnectionException("Sessions service");
-        }
-        catch (RuntimeException e){
-            throw new BackendConnectionException("Sessions service");
-        }
-    }
-
-    @Override
-    public boolean testSessionForUserId(Long id) {
-        try{
-            log.info("ALKI");
-            getSessionForUserId(id);
-        }
-        catch (BackendNotException e){
-            return false;
-        }
-        log.info("ALKI1");
-        return true;
-    }
-
-    @Override
-    public String getUserCookieName() {
-        return USER_COOKIE_NAME;
-    }
-
-    @Override
-    public void logout(long userId) {
-        String request;
-        try{
-            Sessions s = getSessionForUserId(userId);
-            request = SESSIONS_BACKEND_URL + "/" + s.getSessionId();
-            sendDeleteRequest(request);
-        }
-        catch (HttpClientErrorException e) {
-            if(e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.NOT_FOUND)
-                throw new BackendNotException("Sessions service", e.getStatusCode());
-            else
-                throw new BackendConnectionException("Sessions service");
-        }
-        catch (RuntimeException e){
-            throw new BackendConnectionException("Sessions service");
-        }
-    }
-
-    @Override
-    public Sessions getSessionForUserId(Long id) {
-        String request = SESSIONS_BACKEND_URL + "/" +id;
-        return getSession(request);
-    }
-
-    @Override
-    public Sessions getSession(String str) {
-        try {
-            return getObjectViaConnect(str, Sessions.class);
-        }
-        catch (HttpClientErrorException e) {
-            if(e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.NOT_FOUND)
-                throw new BackendNotException("Sessions service", e.getStatusCode());
-            else
-                throw new BackendConnectionException("Sessions service");
-        }
-        catch (RuntimeException e){
-            throw new BackendConnectionException("Sessions service");
-        }
-    }
-
 
     private <T> boolean existsObject(String request, Class<T> responseType) {
-        RestTemplate restTemplate = new RestTemplate();
         boolean result = true;
-
         try {
-            restTemplate.getForEntity(request, responseType);
+            getObjectViaConnect(request, responseType);
         }
-        catch (HttpClientErrorException e){
-            if(e.getStatusCode() == HttpStatus.NOT_FOUND)
-                result = false;
-            else
-                throw e;
+        catch (BackendNotException e){
+            result = false;
         }
 
         return result;
     }
 
+    private <T> T getObjectViaConnect(@NotNull String request, Class<T> responseType, Map<String, ?> urlParams){
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            T object = restTemplate.getForObject(request, responseType, urlParams);
+            return object;
+        }
+        catch (HttpClientErrorException e) {
+
+            if(e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.NOT_FOUND)
+                throw new BackendNotException(getBackendName(responseType), e.getStatusCode());
+            else
+                throw new BackendConnectionException(getBackendName(responseType));
+        }
+        catch (RuntimeException e){
+            throw new BackendConnectionException(getBackendName(responseType));
+        }
+    }
+
     private <T> T getObjectViaConnect(@NotNull String request, Class<T> responseType){
-        RestTemplate restTemplate = new RestTemplate();
-        T object = restTemplate.getForObject(request, responseType);
-        return object;
+        return getObjectViaConnect(request, responseType, new HashMap<>());
     }
 
-    private String createObjectViaConnect(@NotNull String url, Object request){
-        RestTemplate restTemplate = new RestTemplate();
-        return restTemplate.postForLocation(url, request).toString();
+
+    private <T> T createObjectViaConnect(@NotNull String url, Object request, Class<T> clazz){
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            return restTemplate.postForObject(url, request, clazz);
+        }
+        catch (HttpClientErrorException e) {
+
+            if(e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.NOT_FOUND)
+                throw new BackendNotException(getBackendName(clazz), e.getStatusCode());
+            else
+                throw new BackendConnectionException(getBackendName(clazz));
+        }
+        catch (RuntimeException e){
+            throw new BackendConnectionException(getBackendName(clazz));
+        }
     }
 
-    private void updateObjectViaConnect(@NotNull String url, Object request){
-        RestTemplate restTemplate = new RestTemplate();
-        restTemplate.put(url, request);
+    private <T> void updateObjectViaConnect(@NotNull String url, Object request, Class<T> clazz){
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            restTemplate.put(url, request);
+        }
+        catch (HttpClientErrorException e) {
+
+            if(e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.NOT_FOUND)
+                throw new BackendNotException(getBackendName(clazz), e.getStatusCode());
+            else
+                throw new BackendConnectionException(getBackendName(clazz));
+        }
+        catch (RuntimeException e){
+            throw new BackendConnectionException(getBackendName(clazz));
+        }
     }
 
-    private void sendDeleteRequest(@NotNull String url){
-        RestTemplate restTemplate = new RestTemplate();
-        restTemplate.delete(url);
+    private <T> void sendDeleteRequest(@NotNull String url, Class<T> clazz){
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            restTemplate.delete(url);
+        }
+        catch (HttpClientErrorException e) {
+
+            if(e.getStatusCode() == HttpStatus.BAD_REQUEST || e.getStatusCode() == HttpStatus.NOT_FOUND)
+                throw new BackendNotException(getBackendName(clazz), e.getStatusCode());
+            else
+                throw new BackendConnectionException(getBackendName(clazz));
+        }
+        catch (RuntimeException e){
+            throw new BackendConnectionException(getBackendName(clazz));
+        }
+    }
+
+    private String getBackendName(Class<?> clazz){
+        if(SessionBackend.class.isAssignableFrom(clazz)){
+            return "Sessions backend";
+        }
+        else if(SailorBackend.class.isAssignableFrom(clazz)){
+            return "Sailors backend";
+        }
+        else if(ShipBackend.class.isAssignableFrom(clazz)){
+            return "Ships backend";
+        }
+        else{
+            return "Unknown backend";
+        }
     }
 
 //    private ResponseEntity<T> T exchange(@NotNull String request, Class<T> responseType){
