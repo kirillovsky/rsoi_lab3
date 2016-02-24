@@ -1,0 +1,16 @@
++1. Remove users backend
++2. Add login, password to sesions entity
+	+2.1. Refactoring in frontend
++3. 2 request to get and create sessions
++3. Do not send request to sessions backend in responce HTML (check via Cookie + refactoring get view[use factory])
+4. Complexy request (backend sailors + backend ships)
+	+ Backend responce
++5. Add access log to embed Tomcat in Spring
+
+HTTP - codes
+
+
+
+curl -i -H "Content-Type: application/json" -X POST "http://127.0.0.1:8100/sessions" -d "{\"login\":\"TST\",\"password\":\"IVANOV\"}"
+
+curl -i -H "Content-Type: application/json" -X GET "http://127.0.0.1:8010/ships/names" -d "{[1, 2, 3, 4]}"
