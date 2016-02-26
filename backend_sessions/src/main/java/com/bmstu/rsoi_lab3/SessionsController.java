@@ -14,6 +14,7 @@ import org.springframework.transaction.UnexpectedRollbackException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import javax.crypto.IllegalBlockSizeException;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
@@ -28,6 +29,8 @@ public class SessionsController {
     private SessionsRepository service;
     private static final Logger log = LoggerFactory.getLogger(SessionsController.class);
 
+    @Autowired
+    private SecurityTools securityTools;
 
     @Autowired
     public SessionsController(SessionsRepository service) {
@@ -36,11 +39,22 @@ public class SessionsController {
 
     @RequestMapping(value = "/{login}", method=RequestMethod.GET)
     public Sessions getSession(@PathVariable String login){
+        try {
+            login = securityTools.decrypt(login);
+        }
+        catch (RuntimeException e) {
+            throw new SessionsNotFoundException(login);
+        }
+
         Sessions s = service.findByLogin(login);
+
 
         if(s == null){
             throw new SessionsNotFoundException(login);
         }
+
+        s.setLogin(securityTools.encrypt(s.getLogin()));
+        log.info(s.toString());
 
         if(s.getExpiredTime() <= System.currentTimeMillis()) {
             service.delete(s.getSessionId());
@@ -73,12 +87,14 @@ public class SessionsController {
     @RequestMapping(method=RequestMethod.POST)
     public ResponseEntity<Sessions> addSessions(@RequestBody String str){
         Sessions s = getSessionsFromJson(str);
-
+        log.info(s.toString());
         if(service.findByLogin(s.getLogin()) != null)
             throw new SessionsAlreadyExists(s);
 
         s.refreshExpiredTime();
+        s.setLogin(securityTools.decrypt(s.getLogin()));
         s = service.save(s);
+        s.setLogin(securityTools.encrypt(s.getLogin()));
 
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setLocation(ServletUriComponentsBuilder.fromCurrentRequest()

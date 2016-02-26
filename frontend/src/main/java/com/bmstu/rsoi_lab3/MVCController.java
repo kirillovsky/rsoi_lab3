@@ -43,6 +43,9 @@ public class MVCController {
         this.service = service;
     }
 
+    @Autowired
+    private SecurityTools securityTools;
+
     @RequestMapping(value = "/", method= RequestMethod.GET)
     public ModelAndView getStartPage(@CookieValue(value= SESSIONS_COOKIE, defaultValue = "") String login){
 
@@ -270,6 +273,7 @@ public class MVCController {
             throw new NotAuthorisedException();
         }
 
+        s.setLogin(securityTools.decrypt(s.getLogin()));
         mv.addObject("sess", s);
 
         service.updateSessions(s);
@@ -322,7 +326,7 @@ public class MVCController {
         }
 
         Sessions s = service.createSession(newSession);
-        redirect.addFlashAttribute("lastDeleteMsg", "Session for login: " + s.getLogin() + " successfully created!");
+        redirect.addFlashAttribute("lastDeleteMsg", "Session for login: " + securityTools.decrypt(s.getLogin()) + " successfully created!");
         mv.setViewName("redirect:/");
         return mv;
     }
@@ -353,17 +357,24 @@ public class MVCController {
         Cookie cook = new Cookie(SESSIONS_COOKIE, s.getLogin());
         cook.setPath("/");
         response.addCookie(cook);
-        redirect.addFlashAttribute("lastDeleteMsg", "Welcome, " + s.getLogin());
+        redirect.addFlashAttribute("lastDeleteMsg", "Welcome, " + securityTools.decrypt(s.getLogin()));
 
         mv = mvFactory.getAuthorisedMV("redirect:/");
         return mv;
     }
 
+    /**
+     *
+     * @param newLoginEntity - not encrypted
+     * @param result
+     * @return
+     */
     private Sessions validateLoginEntity(Sessions newLoginEntity, BindingResult result) {
 
         Sessions ses;
         try {
-            ses = service.getSession(newLoginEntity.getLogin());
+            ses = service.getSession(securityTools.encrypt(newLoginEntity.getLogin()));
+            log.info(ses.toString());
         }
         catch (BackendNotException e){
             ses = null;
@@ -372,7 +383,9 @@ public class MVCController {
             result.addError(new FieldError("LoginEntity", "login", "Users with login: " + newLoginEntity.getLogin() + " not exists"));
             return ses;
         }
-        else if(!ses.getLogin().equals(newLoginEntity.getLogin()) || !ses.getPassword().equals(newLoginEntity.getPassword())) {
+
+        else if(!ses.getLogin().equals(securityTools.encrypt(newLoginEntity.getLogin()))
+                || !ses.getPassword().equals(securityTools.encrypt(newLoginEntity.getPassword()))) {
             result.addError(new FieldError("LoginEntity", "password", "Wrong password. Try again!"));
             return ses;
         }
@@ -385,7 +398,7 @@ public class MVCController {
 
         Sessions ses;
         try {
-            ses = service.getSession(newLoginEntity.getLogin());
+            ses = service.getSession(securityTools.encrypt(newLoginEntity.getLogin()));
         }
         catch (BackendNotException e){
             ses = null;
@@ -424,12 +437,15 @@ public class MVCController {
     public ModelAndView handleError(RuntimeException exception, HttpServletRequest request) {
         String auth = "";
 
-        for(Cookie c: request.getCookies())
-            if(c.getName().equals(SESSIONS_COOKIE))
-                auth = (c.getValue() != null)? c.getValue(): "";
-        ModelAndView mv = mvFactory.getMV("layout", auth);
-        mv.addObject("errorMessage", exception.getMessage());
-        return mv;
+        throw exception;
+//        if(request.getCookies() != null)
+//            for(Cookie c: request.getCookies())
+//                if(c.getName().equals(SESSIONS_COOKIE))
+//                    auth = (c.getValue() != null)? c.getValue(): "";
+//
+//        ModelAndView mv = mvFactory.getMV("layout", auth);
+//        mv.addObject("errorMessage", exception.getMessage());
+//        return mv;
     }
 
 

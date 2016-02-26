@@ -70,4 +70,14 @@ public class Sessions implements Serializable {
     public void refreshExpiredTime(){
         this.expiredTime = SESSION_LIVE_TIME + System.currentTimeMillis();
     }
+
+    @Override
+    public String toString() {
+        return "Sessions{" +
+                "expiredTime=" + expiredTime +
+                ", sessionId=" + sessionId +
+                ", login='" + login + '\'' +
+                ", password='" + password + '\'' +
+                '}';
+    }
 }

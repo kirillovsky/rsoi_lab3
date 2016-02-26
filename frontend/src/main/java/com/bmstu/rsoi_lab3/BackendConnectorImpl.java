@@ -10,20 +10,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.RequestEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +33,9 @@ public class BackendConnectorImpl implements BackendsConnector {
     protected static String SESSIONS_BACKEND_URL = "http://127.0.0.1:8100/sessions";
 
     private static final Logger log = LoggerFactory.getLogger(FrontendApplication.class);
+
+    @Autowired
+    private SecurityTools securityTools;
 
     @Override
     public Sailors getSailor(long id) {
@@ -153,6 +150,9 @@ public class BackendConnectorImpl implements BackendsConnector {
     @Override
     public Sessions createSession(Sessions s) {
         String request = SESSIONS_BACKEND_URL;
+        s.setLogin(securityTools.encrypt(s.getLogin()));
+        s.setPassword(securityTools.encrypt(s.getPassword()));
+        log.info(s.toString());
         return createObjectViaConnect(request, s, Sessions.class);
     }
 

@@ -12,6 +12,7 @@ import java.util.Map;
  */
 public interface BackendsConnector {
 
+
     Sailors getSailor(long id);
     Sailors getSailor(String url);
 

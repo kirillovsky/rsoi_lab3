@@ -48,4 +48,13 @@ public class Sessions implements Serializable, SessionBackend {
     public void setSessionId(Long sessionId) {
         this.sessionId = sessionId;
     }
+
+    @Override
+    public String toString() {
+        return "Sessions{" +
+                "login='" + login + '\'' +
+                ", sessionId=" + sessionId +
+                ", password='" + password + '\'' +
+                '}';
+    }
 }
