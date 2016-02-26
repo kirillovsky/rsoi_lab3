@@ -1,6 +1,7 @@
 package com.bmstu.rsoi_lab3;
 
 
+import com.bmstu.rsoi_lab3.exception.BackendConnectionException;
 import com.bmstu.rsoi_lab3.exception.BackendNotException;
 import com.bmstu.rsoi_lab3.exception.NotAuthorisedException;
 import com.bmstu.rsoi_lab3.models.*;
@@ -15,12 +16,12 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.sql.Date;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 
 /**
@@ -35,7 +36,7 @@ public class MVCController {
     @Autowired
     private ModelAndViewFactory mvFactory;
     private static final String SESSIONS_COOKIE = "LOGIN";
-    private static final Logger log = LoggerFactory.getLogger(FrontendApplication.class);
+    private static final Logger log = LoggerFactory.getLogger(MVCController.class);
 
     @Autowired
     public MVCController(BackendsConnector service) {
@@ -132,7 +133,7 @@ public class MVCController {
     public ModelAndView modifyShip(@Valid @ModelAttribute("newShip") Ships newShip,  BindingResult result,
                                    RedirectAttributes redirect, @PathVariable("id") long shipsId,
                                    @CookieValue(value= SESSIONS_COOKIE, defaultValue = "") String login){
-        ModelAndView mv = mvFactory.getMV("redirect:/ships/" + shipsId, login);
+        ModelAndView mv = mvFactory.getNotAuthorisedMV("redirect:/ships/" + shipsId);
         validateAuthorisation(mv, login);
         Sessions s = service.getSession(login);
 
@@ -150,7 +151,7 @@ public class MVCController {
     @RequestMapping(value = "/deleteShip/{id}", method= RequestMethod.POST)
     public ModelAndView deleteShip(@PathVariable("id") long shipsId, RedirectAttributes redirect,
                                    @CookieValue(value= SESSIONS_COOKIE, defaultValue = "") String login){
-        ModelAndView mv = mvFactory.getMV("redirect:/ships/", login);
+        ModelAndView mv = mvFactory.getNotAuthorisedMV("redirect:/ships/");
         validateAuthorisation(mv, login);
         Sessions s = service.getSession(login);
 
@@ -186,7 +187,7 @@ public class MVCController {
     public ModelAndView createSailor(@Valid @ModelAttribute("newSailor") Sailors newSailor,
                                      BindingResult result, RedirectAttributes redirect,
                                      @CookieValue(value= SESSIONS_COOKIE, defaultValue = "") String login){
-        ModelAndView mv = mvFactory.getAuthorisedMV();
+        ModelAndView mv = mvFactory.getMV(login);
         validateAuthorisation(mv, login);
         Sessions s = service.getSession(login);
 
@@ -201,12 +202,12 @@ public class MVCController {
             return mv;
         }
 
-        Sailors obj =  service.createSailors(newSailor);
-        redirect.addFlashAttribute("globalMessage", "Successfully created a new sailor");
+        Sailors obj = service.createSailors(newSailor);
+        redirect.addFlashAttribute("lastDeleteMsg", "Successfully created a new sailor");
 
         service.updateSessions(s);
-        //mv.setViewName("redirect:/sailors/" + obj.getId());
-        return new ModelAndView("redirect:/sailors/" + obj.getId());
+        mv.setViewName("redirect:/sailors/" + obj.getId());
+        return mv;
     }
 
     @RequestMapping(value = "/sailors/{id}", method= RequestMethod.POST)
@@ -214,7 +215,7 @@ public class MVCController {
                                    RedirectAttributes redirect, @PathVariable("id") long sailorId,
                                      @CookieValue(value= SESSIONS_COOKIE, defaultValue = "") String login){
 
-        ModelAndView mv = mvFactory.getAuthorisedMV("redirect:/sailors/" + sailorId);
+        ModelAndView mv = mvFactory.getNotAuthorisedMV("redirect:/sailors/" + sailorId);
         validateAuthorisation(mv, login);
         Sessions s = service.getSession(login);
 
@@ -238,7 +239,7 @@ public class MVCController {
     @RequestMapping(value = "/deleteSailor/{id}", method= RequestMethod.POST)
     public ModelAndView deleteSailor(@PathVariable("id") long sailorId, RedirectAttributes redirect,
                                      @CookieValue(value= SESSIONS_COOKIE, defaultValue = "") String login){
-        ModelAndView mv = mvFactory.getAuthorisedMV("redirect:/sailors");
+        ModelAndView mv = mvFactory.getNotAuthorisedMV("redirect:/sailors");
         validateAuthorisation(mv, login);
 
         Sessions s = service.getSession(login);
@@ -258,21 +259,16 @@ public class MVCController {
 
     @RequestMapping(value = "/me", method= RequestMethod.GET)
     public ModelAndView getSession(@CookieValue(value= SESSIONS_COOKIE, defaultValue = "") String login){
-        log.info("TST 11");
         ModelAndView mv = mvFactory.getMV("login/session", login);
         validateAuthorisation(mv, login);
 
-        log.info("TST 11");
         Sessions s;
         try {
             s = service.getSession(login);
         }
         catch (BackendNotException e) {
-            log.info("ALKI: " + e.getMessage());
             throw new NotAuthorisedException();
         }
-
-        log.info("TST 11");
 
         mv.addObject("sess", s);
 
@@ -347,25 +343,19 @@ public class MVCController {
         }
 
         if (result.hasErrors()) {
-            log.info("ALKI " + login);
             mv = mvFactory.getMV("login/form", login);
             mv.addObject("formErrors", result.getAllErrors());
             return mv;
         }
-        log.info("---------------------------------");
-        log.info("TST 2");
+
 
         service.updateSessions(s);
-        log.info("Cookie try to set");
         Cookie cook = new Cookie(SESSIONS_COOKIE, s.getLogin());
         cook.setPath("/");
         response.addCookie(cook);
-        log.info("Cookie setted");
+        redirect.addFlashAttribute("lastDeleteMsg", "Welcome, " + s.getLogin());
 
-        log.info("TST 1");
-        mv = new ModelAndView("layout");
-        mv.addObject("isAuthorised", true);
-        mv.addObject("lastDeleteMsg", "Welcome, " + s.getLogin());
+        mv = mvFactory.getAuthorisedMV("redirect:/");
         return mv;
     }
 
@@ -382,7 +372,7 @@ public class MVCController {
             result.addError(new FieldError("LoginEntity", "login", "Users with login: " + newLoginEntity.getLogin() + " not exists"));
             return ses;
         }
-        else if(!ses.getLogin().equals(newLoginEntity.getLogin()) && ses.getPassword().equals(newLoginEntity.getPassword())) {
+        else if(!ses.getLogin().equals(newLoginEntity.getLogin()) || !ses.getPassword().equals(newLoginEntity.getPassword())) {
             result.addError(new FieldError("LoginEntity", "password", "Wrong password. Try again!"));
             return ses;
         }
@@ -407,90 +397,43 @@ public class MVCController {
     }
 
     private List<Long> getListShipsIdsFromSailorsPage(SailorsPage pg){
-        List<Long> lst = new ArrayList<>(pg.getSize());
+        Set<Long> uniqueLst = new HashSet<>(pg.getSize());
 
         for(SailorsPreview s: pg.getContent())
-            lst.add(s.getShipEmpl());
+            uniqueLst.add(s.getShipEmpl());
 
-        return lst;
+        return new ArrayList<>(uniqueLst);
     }
 
 
     @ExceptionHandler(NotAuthorisedException.class)
-    public ModelAndView handleAuthError(NotAuthorisedException exception) {
+    public ModelAndView handleAuthError(NotAuthorisedException exception, HttpServletResponse response) {
 
         ModelAndView mav =  mvFactory.getNotAuthorisedMV("layout");
+
+        Cookie cook = new Cookie(SESSIONS_COOKIE, "");
+        cook.setPath("/");
+        response.addCookie(cook);
+
         mav.addObject("errorMessage", exception.getMessage());
         return mav;
     }
-
 
 
     @ExceptionHandler(RuntimeException.class)
-    public ModelAndView handleError(RuntimeException exception) {
+    public ModelAndView handleError(RuntimeException exception, HttpServletRequest request) {
+        String auth = "";
 
-        ModelAndView mav = new ModelAndView("layout");
-        mav.addObject("errorMessage", exception.getMessage());
-        return mav;
+        for(Cookie c: request.getCookies())
+            if(c.getName().equals(SESSIONS_COOKIE))
+                auth = (c.getValue() != null)? c.getValue(): "";
+        ModelAndView mv = mvFactory.getMV("layout", auth);
+        mv.addObject("errorMessage", exception.getMessage());
+        return mv;
     }
 
 
 
-//    @RequestMapping(value = "/{userId}", method={RequestMethod.PATCH, RequestMethod.PUT})
-//    public void updateUser(@PathVariable long userId, @RequestBody String user){
-//        if(!service.hasUser(userId)){
-//            throw new UsersNotFoundException(userId);
-//        }
-//
-//        Users newUser = getUsersFromJson(user);
-//        service.updateUser(userId, newUser);
-//    }
-//
-//    @RequestMapping(method=RequestMethod.POST)
-//    public ResponseEntity<?> addUser(@RequestBody String user){
-//        Users s = service.addUser(getUsersFromJson(user));
-//
-//        HttpHeaders httpHeaders = new HttpHeaders();
-//        httpHeaders.setLocation(ServletUriComponentsBuilder
-//                .fromCurrentRequest().path("/{id}")
-//                .buildAndExpand(s.getId()).toUri());
-//
-//        return new ResponseEntity<>(null, httpHeaders, HttpStatus.CREATED);
-//    }
-//
-//    @ResponseStatus(HttpStatus.NOT_FOUND)
-//    class UsersNotFoundException extends RuntimeException {
-//
-//        public UsersNotFoundException(long sailorId) {
-//            super("Could not find Sailor[" + sailorId + "]");
-//        }
-//    }
-//
-//    @ResponseStatus(HttpStatus.BAD_REQUEST)
-//    class UsersBadRequest extends RuntimeException {
-//
-//        public UsersBadRequest(IOException e) {
-//            super(e.getMessage());
-//        }
-//    }
-//
-//    private Users getUsersFromJson(String json){
-//        Users result;
-//
-//        try {
-//            result = new ObjectMapper().readValue(json, Users.class);
-//        } catch (IOException e) {
-//            throw new UsersBadRequest(e);
-//        }
-//
-//        return result;
-//    }
-//
-//    @ResponseStatus(value=HttpStatus.BAD_REQUEST, reason="Ship with sended id doesnt not exists")
-//    @ExceptionHandler(UnexpectedRollbackException.class)
-//    public void shipWithExpectedIdDoesntExists(){
-//
-//    }
 
 
 

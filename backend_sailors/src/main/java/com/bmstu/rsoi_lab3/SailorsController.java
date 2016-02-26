@@ -68,7 +68,7 @@ public class SailorsController {
     }
 
     @RequestMapping(method=RequestMethod.POST)
-    public ResponseEntity<?> addSailor(@RequestBody String sailor){
+    public ResponseEntity<Sailors> addSailor(@RequestBody String sailor){
         Sailors s = service.addSailor(getSailorsFromJson(sailor));
 
         HttpHeaders httpHeaders = new HttpHeaders();
@@ -76,7 +76,7 @@ public class SailorsController {
                 .fromCurrentRequest().path("/{id}")
                 .buildAndExpand(s.getId()).toUri());
 
-        return new ResponseEntity<>(null, httpHeaders, HttpStatus.CREATED);
+        return new ResponseEntity<>(s, httpHeaders, HttpStatus.CREATED);
     }
 
     @ResponseStatus(HttpStatus.NOT_FOUND)
